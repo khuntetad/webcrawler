@@ -7,6 +7,7 @@ import nltk
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from datetime import datetime
 
 from whoosh import index
 from whoosh.index import create_in
@@ -68,15 +69,15 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                         count += 1
 
                         keywords = get_keywords(soup_content)
+                        print("FINISHED WRITING")
 
-                        # pass the url, timestamp of when accessed, get top keywords, and content
+                        # pass the url, timestamp of when accessed, get top keywords, and content trimmed
                         writer.writerow([
                             current_url,
                             datetime.now().isoformat(),
                             ", ".join(keywords[:20]),
-                            soup_content[:300]
+                            soup_content[:200]
                         ])
-
                         # now we have added a document for the current url
                         # extract everything else
                         for link in soup.find_all('a', href=True):
@@ -92,20 +93,33 @@ def crawl(seed_url, index_writer, max_pages = 1000):
 # now we need to extract the keywords for each of the subsections
 def get_keywords(text):
     # get the stopwords so we know what is irrelevant
-    nltk.download("stopwords", quiet=True)
 
+    if not text.strip():
+        return []
+
+    # downgraded to nltk 3.8.1, there is a bug in the current version
+    nltk.download("stopwords", quiet=True)
+    print("stopwords downloaded")
     # need this so we can be able to break up the text into words
     nltk.download("punkt", quiet=True)
+    print("second downloaded")
     stop = set(stopwords.words("english"))
-    words = word_tokenize(text.lower())
+    print(len(stop))
+    # there might be an issue if we pass in too much data
+    try:
+        print(f"Text that we are passing in: {text[:100]}")
+        words = word_tokenize(text.lower()[:100])
+        print("TOKENIZED")
+    except Exception as e:
+        print(f"Error during tokenization: {e}")
 
     # return a list of all of the words that are alphanum and not a irrelevant stopword
-    return [word for word in words if word.isalnum() and word not in stopwords]
+    return [word for word in words if word.isalnum() and word not in stop]
 
 if __name__ == "__main__":
     seed_url = "https://www.cc.gatech.edu/"
     use_index = create_index()
 
     with use_index.writer() as writer:
-        url_list = crawl(seed_url, writer, max_pages=100)
+        url_list = crawl(seed_url, writer, max_pages=50)
     print(f"Crawled {len(url_list)}")
