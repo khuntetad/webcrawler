@@ -76,7 +76,7 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                         count += 1
 
                         keywords = get_keywords(soup_content)
-                        print("FINISHED WRITING")
+                        # print("FINISHED WRITING")
 
                         # pass the url, timestamp of when accessed, get top keywords, and content trimmed
                         writer.writerow([
@@ -95,7 +95,7 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                             new_url = requests.compat.urljoin(current_url, link['href'])
                             # if this is extended off of our seed_url we need to visit it
                             if new_url.startswith(seed_url) and new_url not in visited and new_url not in crawler_process:
-                                print(new_url)
+                                # print(new_url)
                                 crawler_process.append(new_url)
                 except:
                     print(f"There was an error in parsing the {current_url} page")
@@ -117,17 +117,19 @@ def get_keywords(text):
 
     # downgraded to nltk 3.8.1, there is a bug in the current version
     nltk.download("stopwords", quiet=True)
-    print("stopwords downloaded")
+    # print("stopwords downloaded")
+
     # need this so we can be able to break up the text into words
     nltk.download("punkt", quiet=True)
-    print("second downloaded")
+    # print("second downloaded")
     stop = set(stopwords.words("english"))
-    print(len(stop))
+
+    # print(len(stop))
     # there might be an issue if we pass in too much data
     try:
-        print(f"Text that we are passing in: {text[:100]}")
+        # print(f"Text that we are passing in: {text[:100]}")
         words = word_tokenize(text.lower()[:100])
-        print("TOKENIZED")
+        # print("TOKENIZED")
     except Exception as e:
         print(f"Error during tokenization: {e}")
 
@@ -135,11 +137,12 @@ def get_keywords(text):
     return [word for word in words if word.isalnum() and word not in stop]
 
 if __name__ == "__main__":
+    # use cc gatech as seed url
     seed_url = "https://www.cc.gatech.edu/"
     use_index = create_index()
 
     with use_index.writer() as writer:
-        url_list, crawl_stats = crawl(seed_url, writer, max_pages=5)
+        url_list, crawl_stats = crawl(seed_url, writer, max_pages=1010)
 
     crawl_timing = crawl_stats["crawl_times"]
     keywords_count = crawl_stats["keywords_count"]
