@@ -121,5 +121,5 @@ if __name__ == "__main__":
     use_index = create_index()
 
     with use_index.writer() as writer:
-        url_list = crawl(seed_url, writer, max_pages=50)
+        url_list = crawl(seed_url, writer, max_pages=1000)
     print(f"Crawled {len(url_list)}")
