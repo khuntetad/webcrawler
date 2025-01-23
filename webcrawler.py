@@ -1,4 +1,5 @@
 import csv
+import datetime
 import requests
 import requests.compat
 import os, os.path
@@ -61,9 +62,20 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                         soup = BeautifulSoup(response.text, 'html.parser')
 
                         # use the soup to get the relevant text
+                        soup_content = soup.get_text()
                         index_writer.add_document(url=current_url, content=soup.get_text())
                         visited.add(current_url)
                         count += 1
+
+                        keywords = get_keywords(soup_content)
+
+                        # pass the url, timestamp of when accessed, get top keywords, and content
+                        writer.writerow([
+                            current_url,
+                            datetime.now().isoformat(),
+                            ", ".join(keywords[:20]),
+                            soup_content[:300]
+                        ])
 
                         # now we have added a document for the current url
                         # extract everything else
