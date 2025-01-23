@@ -1,9 +1,10 @@
 import csv
-import datetime
+import time
 import requests
 import requests.compat
 import os, os.path
 import nltk
+import matplotlib.pyplot as plt
 
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -35,6 +36,12 @@ def crawl(seed_url, index_writer, max_pages = 1000):
     # instantiate something for the crawler to process
     crawler_process = [seed_url]
     count = 0
+
+    # need to set a start time, url count, keyword count
+    start_time = time.time()
+    crawl_times = []
+    url_count = []
+    keyword_count = []
 
     # store all of the information into a csv file
     with open("crawled_data.csv", "w", newline="", encoding="utf-8") as file:
@@ -78,6 +85,10 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                             ", ".join(keywords[:20]),
                             soup_content[:200]
                         ])
+
+                        crawl_times.append(time.time() - start_time)
+                        keyword_count.append(len(keywords))
+                        url_count.append(len(url_count))
                         # now we have added a document for the current url
                         # extract everything else
                         for link in soup.find_all('a', href=True):
@@ -88,7 +99,14 @@ def crawl(seed_url, index_writer, max_pages = 1000):
                                 crawler_process.append(new_url)
                 except:
                     print(f"There was an error in parsing the {current_url} page")
-    return visited
+
+    crawl_stats = {
+        "crawl_times": crawl_times,
+        "keywords_count": keyword_count,
+        "url_count": url_count
+    }
+
+    return visited, crawl_stats
 
 # now we need to extract the keywords for each of the subsections
 def get_keywords(text):
@@ -121,5 +139,38 @@ if __name__ == "__main__":
     use_index = create_index()
 
     with use_index.writer() as writer:
-        url_list = crawl(seed_url, writer, max_pages=1000)
-    print(f"Crawled {len(url_list)}")
+        url_list, crawl_stats = crawl(seed_url, writer, max_pages=5)
+
+    crawl_timing = crawl_stats["crawl_times"]
+    keywords_count = crawl_stats["keywords_count"]
+    url_count = crawl_stats["url_count"]
+
+    # Crawl Statistics (Crawl speed #pages/minute, ratio of #URL crawled / #URL to be crawled, etc.)
+
+    # first we find the pages crawled per minute
+    plt.plot(crawl_timing, url_count, label="URLs Crawled")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Number of URLs Crawled")
+    plt.title("URLs Crawled over Time")
+    plt.legend()
+    plt.savefig("crawl_over_time.png")
+    plt.show()
+
+    # plot the keywords that we have extracted over a period of time
+    plt.plot(crawl_timing, keywords_count, label="Keywords Extracted", color="green")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Number of Keywords Extracted")
+    plt.title("Keywords Extracted over Time")
+    plt.legend()
+    plt.savefig("keywords_over_time.png")
+    plt.show()
+
+    # also need to plot the speed of the crawl
+    crawl_speed = [urls / time if time > 0 else 0 for urls, time in zip(url_count, crawl_timing)]
+    plt.plot(crawl_timing, crawl_speed, label = "Crawl Speed (Pages / Sec)", color = "blue")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Pages per Second")
+    plt.title("Crawl Speed over Time")
+    plt.legend()
+    plt.savefig("crawl_speed.png")
+    plt.show()
