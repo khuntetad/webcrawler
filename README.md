@@ -1,5 +1,5 @@
 # Problem 1.2: Write a Web Crawler of your own
-## By: Devansh Khunteta, CS 6675
+## By: Devansh Khunteta
 
 ## Setup
 To create the environment for the web crawler, a few different packages will need to be installed within the Conda environment. The process to do so is as follows:
